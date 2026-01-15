@@ -4,6 +4,7 @@ import { Language, FarmerProfile, Expense } from './types';
 import { CATEGORIES, UI_STRINGS } from './constants';
 import Dashboard from './components/Dashboard';
 import Assistant from './components/Assistant';
+import LiveAssistant from './components/LiveAssistant';
 import IoTDashboard from './components/IoTDashboard';
 import CropDoctor from './components/CropDoctor';
 import MandiPrices from './components/MandiPrices';
@@ -17,23 +18,18 @@ import Profile from './components/Profile';
 import CropCalendar from './components/CropCalendar';
 import FieldMap from './components/FieldMap';
 import WeatherTracker from './components/WeatherTracker';
-import Auth from './components/Auth';
-import { Menu, X, Languages, Landmark, LogOut } from 'lucide-react';
+import { Menu, X, Languages, Landmark, Trash2, Mic, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('kisan_auth') === 'true';
-  });
-
   const [profile, setProfile] = useState<FarmerProfile>(() => {
     const saved = localStorage.getItem('kisan_profile');
     return saved ? JSON.parse(saved) : {
       name: 'Kisan Bhai',
-      mobile: '',
-      state: '',
-      district: '',
-      landSize: '0',
-      cropPreference: []
+      mobile: '9999999999',
+      state: 'Uttar Pradesh',
+      district: 'Lucknow',
+      landSize: '5',
+      cropPreference: ['Wheat', 'Rice']
     };
   });
 
@@ -43,8 +39,9 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [language, setLanguage] = useState<Language>(Language.HINDI); // Default HINDI
+  const [language, setLanguage] = useState<Language>(Language.HINDI);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isLiveActive, setIsLiveActive] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('kisan_profile', JSON.stringify(profile));
@@ -53,17 +50,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('kisan_expenses', JSON.stringify(expenses));
   }, [expenses]);
-
-  const handleLogin = (userMobile: string) => {
-    setIsAuthenticated(true);
-    localStorage.setItem('kisan_auth', 'true');
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('kisan_auth');
-    setActiveTab('dashboard');
-  };
 
   const toggleLanguage = useCallback(() => {
     setLanguage(prev => prev === Language.HINDI ? Language.ENGLISH : Language.HINDI);
@@ -90,32 +76,32 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return <Auth onLogin={handleLogin} lang={language} onToggleLang={toggleLanguage} />;
-  }
-
   const strings = UI_STRINGS[language] || UI_STRINGS.en;
-  const localizedTitle = language === Language.HINDI ? 'योजना पोर्टल' : 'Yojna Portal';
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row text-slate-800 bg-[#f0fdf4] font-['Outfit'] overflow-hidden">
-      {/* Mobile Top Header - Large touch area */}
+      {/* Google Live Assistant Modal */}
+      {isLiveActive && (
+        <LiveAssistant 
+          lang={language} 
+          profile={profile} 
+          onClose={() => setIsLiveActive(false)} 
+        />
+      )}
+
+      {/* Mobile Top Header */}
       <header className="md:hidden bg-green-800 text-white p-5 flex items-center justify-between sticky top-0 z-50 shadow-lg">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 active:scale-90 transition-transform"
-            aria-label="Menu"
           >
             <Menu className="w-10 h-10" />
           </button>
           <h1 className="text-2xl font-black tracking-tighter uppercase">KisanAI</h1>
         </div>
-        <button 
-          onClick={toggleLanguage} 
-          className="bg-white/20 px-6 py-2.5 rounded-full text-xs font-black uppercase active:scale-95"
-        >
-          {language === Language.HINDI ? 'English' : 'हिन्दी'}
+        <button onClick={() => setIsLiveActive(true)} className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+           <Mic className="w-6 h-6 text-white" />
         </button>
       </header>
 
@@ -147,33 +133,16 @@ const App: React.FC = () => {
               <span className="text-lg">{strings[cat.id] || cat.label}</span>
             </button>
           ))}
-          <button
-            onClick={() => { setActiveTab('yojna'); setSidebarOpen(false); }}
-            className={`w-full flex items-center gap-6 p-5 rounded-[2rem] transition-all text-left ${
-              activeTab === 'yojna' ? 'bg-white text-green-900 shadow-2xl font-black' : 'hover:bg-green-800/50 opacity-80 active:scale-95'
-            }`}
-          >
-            <Landmark className={activeTab === 'yojna' ? 'text-green-600' : 'text-white/60'} />
-            <span className="text-lg">{localizedTitle}</span>
-          </button>
         </nav>
 
         <div className="p-6 border-t border-green-800/50 bg-green-950/20">
-          <div className="flex items-center gap-4 p-5 bg-green-800/30 rounded-[2rem] mb-4 border border-white/5">
-            <div className="w-14 h-14 rounded-2xl bg-green-600 flex items-center justify-center font-black shadow-lg text-xl">
-              {profile.name.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold truncate text-lg">{profile.name}</p>
-              <p className="text-xs font-black text-green-400 uppercase tracking-widest">{profile.district || 'Verified'}</p>
-            </div>
-            <button 
-              onClick={handleLogout} 
-              className="p-3 text-red-400 hover:text-red-300 active:scale-90 transition-transform"
-            >
-              <LogOut className="w-6 h-6" />
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsLiveActive(true)}
+            className="w-full bg-white text-green-900 p-5 rounded-[2rem] font-black flex items-center justify-center gap-3 mb-4 shadow-xl active:scale-95 transition-all"
+          >
+            <Sparkles className="w-6 h-6 text-green-600" />
+            {language === Language.HINDI ? 'Google AI वॉइस' : 'Talk to Google AI'}
+          </button>
           <button 
             onClick={toggleLanguage} 
             className="w-full flex items-center justify-center gap-3 p-5 rounded-[2rem] bg-white/10 text-white hover:bg-white/20 transition-all font-black text-sm uppercase tracking-widest active:scale-95"
@@ -183,17 +152,18 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      {/* Sidebar Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 md:hidden" 
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Main App Area */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-10 page-transition bg-[#f0fdf4]">
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-10 page-transition bg-[#f0fdf4] relative">
         <div className="max-w-7xl mx-auto">{renderContent()}</div>
+        
+        {/* Floating Google Live AI Button */}
+        <button 
+          onClick={() => setIsLiveActive(true)}
+          className="fixed bottom-8 right-8 w-24 h-24 bg-slate-950 rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-all border-4 border-green-600 group"
+        >
+          <div className="absolute inset-0 bg-green-600/20 rounded-full animate-ping group-hover:animate-none"></div>
+          <Mic className="w-10 h-10 text-white relative z-10" />
+        </button>
       </main>
     </div>
   );
