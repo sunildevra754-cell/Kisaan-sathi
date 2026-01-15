@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>KisanAI - किसान साथी</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#166534">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1113/1113753.png">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --safe-area-top: env(safe-area-inset-top);
+      --safe-area-bottom: env(safe-area-inset-bottom);
+    }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #f0fdf4;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      overscroll-behavior-y: contain; /* Prevents pull-to-refresh on Android Chrome */
+      padding-top: var(--safe-area-top);
+      padding-bottom: var(--safe-area-bottom);
+    }
+    
+    /* High contrast focus states for accessibility */
+    button:focus-visible {
+      outline: 4px solid #166534;
+      outline-offset: 2px;
+    }
+    
+    /* Smooth transitions */
+    .page-transition {
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Target specific Android WebView safe areas */
+    @supports (padding: env(safe-area-inset-top)) {
+      .safe-area-pt { padding-top: env(safe-area-inset-top); }
+      .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('KisanAI SW Registered'))
+          .catch(err => console.log('SW registration skipped'));
+      });
+    }
+  </script>
+  <script type="module" src="index.tsx"></script>
+</body>
+</html>
