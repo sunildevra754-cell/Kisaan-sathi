@@ -5,9 +5,13 @@ import { CacheService } from "../utils/cacheService";
 
 const activeRequests = new Map<string, Promise<any>>();
 
-// The key will be injected here by Vite's 'define' configuration
 const getApiKey = () => {
-  return process.env.API_KEY || "";
+  // Vite replaces process.env.API_KEY during build
+  const key = process.env.API_KEY;
+  if (!key) {
+    console.error("API_KEY is not defined in the environment.");
+  }
+  return key || "";
 };
 
 async function executeSecureRequest<T>(fn: () => Promise<T>, cacheKey?: string): Promise<T> {
