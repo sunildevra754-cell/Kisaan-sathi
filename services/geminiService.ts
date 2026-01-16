@@ -6,7 +6,7 @@ import { CacheService } from "../utils/cacheService";
 const activeRequests = new Map<string, Promise<any>>();
 let globalCooldownUntil = 0;
 
-async function executeSecureRequest<T>(fn: () => Promise<T>, cacheKey?: string, maxRetries = 1): Promise<T> {
+async function executeSecureRequest<T>(fn: () => Promise<T>, cacheKey?: string): Promise<T> {
   if (cacheKey) {
     const cached = CacheService.get(cacheKey);
     if (cached) return cached;
@@ -16,20 +16,15 @@ async function executeSecureRequest<T>(fn: () => Promise<T>, cacheKey?: string, 
     return activeRequests.get(cacheKey);
   }
 
-  if (Date.now() < globalCooldownUntil) {
-    throw new Error("COOLDOWN_ACTIVE");
-  }
-
   const execution = (async () => {
     try {
       const result = await fn();
       if (cacheKey && result) {
-        CacheService.set(cacheKey, result, 0.5); // Fast refresh (30 mins)
+        CacheService.set(cacheKey, result, 0.5); // 30 min cache for speed
       }
       return result;
     } catch (error: any) {
-      const msg = (error?.message || "").toLowerCase();
-      if (msg.includes('429')) globalCooldownUntil = Date.now() + 5000;
+      console.error("Gemini Error:", error);
       throw error;
     }
   })();
@@ -45,13 +40,9 @@ async function executeSecureRequest<T>(fn: () => Promise<T>, cacheKey?: string, 
 export const generateSpeech = async (text: string, lang: Language): Promise<string> => {
   return executeSecureRequest(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const voicePrompt = lang === Language.HINDI 
-      ? `सहायक आवाज (गूगल स्टाइल): ${text.substring(0, 400)}`
-      : `Google Voice Assistant Style: ${text.substring(0, 400)}`;
-
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: voicePrompt }] }],
+      contents: [{ parts: [{ text: `Speak this clearly for a farmer in ${lang === Language.HINDI ? 'Hindi' : 'English'}: ${text.substring(0, 500)}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -66,36 +57,35 @@ export const generateSpeech = async (text: string, lang: Language): Promise<stri
 };
 
 export const resolveLocationName = async (lat: number, lng: number): Promise<{ short: string; full: string; district: string; state: string } | null> => {
-  const cacheKey = `loc_${lat.toFixed(2)}_${lng.toFixed(2)}`;
   return executeSecureRequest(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Identify exact location for ${lat}, ${lng} in India. JSON: {"short": "District", "full": "Village, District, State", "district": "District", "state": "State"}`,
+      contents: `Perform precise reverse geocoding for ${lat}, ${lng} in India. Return JSON: {"short": "District Name", "full": "Village/Area, District, State", "district": "District", "state": "State"}`,
     });
     const match = response.text?.match(/\{[\s\S]*\}/);
     return match ? JSON.parse(match[0]) : null;
-  }, cacheKey);
+  }, `loc_${lat.toFixed(3)}_${lng.toFixed(3)}`);
 };
 
-/**
- * GOOGLE WEATHER GROUNDED SERVICE
- * Specifically asks for real-time search data to match Google Weather UI
- */
 export const getWeatherData = async (loc: { lat?: number; lng?: number; text?: string }, lang: Language): Promise<any> => {
   const query = loc.text || `${loc.lat},${loc.lng}`;
   return executeSecureRequest(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const prompt = `SEARCH FOR GOOGLE WEATHER RESULT: Fetch the current temperature, humidity, and wind speed for ${query}, India. 
-    Use the latest data from IMD (India Meteorological Department) or Google Search One-Box. 
-    Explain the current sky condition and give 1 farming tip. 
-    Language: ${lang === Language.HINDI ? 'Hindi' : 'English'}.`;
+    // STRICT SEARCH PROMPT FOR ACCURACY
+    const prompt = `REAL-TIME WEATHER SEARCH: Find exact current weather for ${query}, India. 
+    Required data: Temperature in °C, Humidity %, Wind speed in km/h, and sky conditions. 
+    Match results with Google Search One-Box or IMD. 
+    Output in ${lang === Language.HINDI ? 'Hindi' : 'English'}. Include 1 short farming tip.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: { tools: [{ googleSearch: {} }] }
+      config: { 
+        tools: [{ googleSearch: {} }],
+        temperature: 0.1 
+      }
     });
 
     const text = response.text || "";
@@ -111,9 +101,10 @@ export const getWeatherData = async (loc: { lat?: number; lng?: number; text?: s
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks?.filter((c: any) => c.web).map((c: any) => ({ title: c.web.title, uri: c.web.uri })) || [],
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-  }, `w_grounded_${query}_${lang}`);
+  }, `w_precise_${query}_${lang}`);
 };
 
+// ... Remaining services kept same for stability ...
 export const getMandiPrices = async (locContext: string, lang: Language): Promise<{ text: string, sources: any[] }> => {
   return executeSecureRequest(async () => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -133,7 +124,7 @@ export const getFarmingAdvice = async (query: string, profile: FarmerProfile | n
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Query: ${query}. Context: ${profile?.district}. Search latest agri-research. Lang: ${lang}.`,
+    contents: `Query: ${query}. Context: ${profile?.district}. Latest search data. Lang: ${lang}.`,
     config: { tools: [{ googleSearch: {} }] }
   });
   return response.text || "";
@@ -165,7 +156,7 @@ export const getSchemeAdvice = async (profile: FarmerProfile, lang: Language): P
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Active Govt schemes for ${profile.state} farmers. Brief. Lang: ${lang}.`,
+    contents: `Active Govt schemes for ${profile.state} farmers. Lang: ${lang}.`,
     config: { tools: [{ googleSearch: {} }] }
   });
   return response.text || "";
