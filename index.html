@@ -22,58 +22,51 @@
     body {
       font-family: 'Outfit', sans-serif;
       background-color: #f0fdf4;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      overscroll-behavior-y: contain; /* Prevents pull-to-refresh on Android Chrome */
+      margin: 0;
+      padding: 0;
       padding-top: var(--safe-area-top);
       padding-bottom: var(--safe-area-bottom);
+      overscroll-behavior-y: contain;
     }
-    
-    /* High contrast focus states for accessibility */
-    button:focus-visible {
-      outline: 4px solid #166534;
-      outline-offset: 2px;
+    #root:empty {
+      display: flex;
+      align-items: center;
+      justify-center: center;
+      height: 100vh;
+      background: #f0fdf4;
     }
-    
-    /* Smooth transitions */
-    .page-transition {
-      animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Target specific Android WebView safe areas */
-    @supports (padding: env(safe-area-inset-top)) {
-      .safe-area-pt { padding-top: env(safe-area-inset-top); }
-      .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+    #root:empty::after {
+      content: "लोड हो रहा है...";
+      font-family: 'Outfit', sans-serif;
+      font-weight: bold;
+      color: #166534;
+      font-size: 1.2rem;
     }
   </style>
 <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
-    "recharts": "https://esm.sh/recharts@^3.6.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
 </head>
 <body>
   <div id="root"></div>
+  <!-- Use root-relative path for Vite entry -->
+  <script type="module" src="/index.tsx"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('KisanAI SW Registered'))
-          .catch(err => console.log('SW registration skipped'));
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
       });
     }
   </script>
-  <script type="module" src="index.tsx"></script>
 </body>
 </html>
