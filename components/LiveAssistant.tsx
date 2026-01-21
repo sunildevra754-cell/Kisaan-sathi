@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { Mic, MicOff, X, Volume2, Radio, Loader2, History } from 'lucide-react';
@@ -11,6 +10,7 @@ interface LiveAssistantProps {
   onClose: () => void;
 }
 
+// Fix: Imported React to use the React namespace for React.FC
 const LiveAssistant: React.FC<LiveAssistantProps> = ({ lang, profile, onClose }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
@@ -32,23 +32,30 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ lang, profile, onClose })
   };
 
   const startSession = useCallback(async () => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      console.error("LiveAssistant: API_KEY is missing from environment.");
+      onClose();
+      return;
+    }
+
     try {
-      // START MIC IMMEDIATELY
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioContextInRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       audioContextOutRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: apiKey });
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         callbacks: {
           onopen: () => {
             setStatus('idle');
             const source = audioContextInRef.current!.createMediaStreamSource(stream);
-            const scriptProcessor = audioContextInRef.current!.createScriptProcessor(2048, 1, 1); // Smaller buffer for speed
+            const scriptProcessor = audioContextInRef.current!.createScriptProcessor(2048, 1, 1);
             scriptProcessor.onaudioprocess = (e) => {
               if (isMuted) return;
               const pcmBlob = createPCMBuffer(e.inputBuffer.getChannelData(0));
+              // Ensure we use the resolved session from the promise
               sessionPromise.then(s => s.sendRealtimeInput({ media: pcmBlob }));
             };
             source.connect(scriptProcessor);
@@ -94,13 +101,14 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ lang, profile, onClose })
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: isHindi ? 'Kore' : 'Zephyr' } } },
-          systemInstruction: `Be extremely fast and concise. You are a speed-optimized agri-bot.`,
+          systemInstruction: `Be extremely fast and concise. You are a speed-optimized agri-bot for Indian farmers.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         }
       });
       sessionPromiseRef.current = sessionPromise;
     } catch (err) {
+      console.error("Live session failed:", err);
       onClose();
     }
   }, [lang, profile, isHindi, isMuted, onClose]);

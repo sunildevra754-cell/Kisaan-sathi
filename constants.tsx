@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Sprout, ShoppingCart, Activity, Plane, Users, Wallet, Info, Camera, Landmark, Cpu, Trophy, Calendar, UserCircle, Map as MapIcon, CloudSun } from 'lucide-react';
+import { Sprout, ShoppingCart, Activity, Plane, Users, Wallet, Info, Camera, Landmark, Cpu, Trophy, Calendar, UserCircle, Map as MapIcon, CloudSun, TrendingUp } from 'lucide-react';
 
 export const CATEGORIES = [
   { id: 'dashboard', label: 'Dashboard', icon: <Activity className="w-6 h-6" /> },
@@ -8,10 +8,12 @@ export const CATEGORIES = [
   { id: 'map', label: 'Farm Map', icon: <MapIcon className="w-6 h-6" /> },
   { id: 'crop-doctor', label: 'Crop Doctor', icon: <Sprout className="w-6 h-6" /> },
   { id: 'mandi', label: 'Mandi Bhav', icon: <ShoppingCart className="w-6 h-6" /> },
+  { id: 'yojna', label: 'Kisan Yojna', icon: <Landmark className="w-6 h-6" /> },
   { id: 'calendar', label: 'Calendar', icon: <Calendar className="w-6 h-6" /> },
+  { id: 'expenses', label: 'Expenses', icon: <Wallet className="w-6 h-6" /> },
+  { id: 'profit', label: 'Profit Prediction', icon: <TrendingUp className="w-6 h-6" /> },
   { id: 'iot', label: 'Smart IoT', icon: <Cpu className="w-6 h-6" /> },
   { id: 'assistant', label: 'Kissan Sathi', icon: <Info className="w-6 h-6" /> },
-  { id: 'expenses', label: 'Expenses', icon: <Wallet className="w-6 h-6" /> },
   { id: 'community', label: 'Kisan Feed', icon: <Users className="w-6 h-6" /> },
   { id: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="w-6 h-6" /> },
   { id: 'drone', label: 'Drone Hub', icon: <Plane className="w-6 h-6" /> },
@@ -42,6 +44,8 @@ export const UI_STRINGS: any = {
     profile: "My Profile",
     map: "Farm Map",
     weather: "Live Weather",
+    yojna: "Govt Schemes",
+    profit: "Profit Tracker",
     scan: "Scan",
     predict: "Predict Profit",
   },
@@ -60,6 +64,8 @@ export const UI_STRINGS: any = {
     profile: "मेरी प्रोफाइल",
     map: "खेत का नक्शा",
     weather: "लाइव मौसम",
+    yojna: "सरकारी योजनाएं",
+    profit: "मुनाफा गणना",
     scan: "स्कैन",
     predict: "मुनाफा",
   }
